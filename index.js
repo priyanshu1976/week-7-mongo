@@ -4,80 +4,84 @@ const { auth, JWT_SECRET } = require("./auth");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-mongoose.connect("")
+mongoose.connect(""); // i have to put my connection url
 
 const app = express();
 app.use(express.json());
 
-app.post("/signup", async function(req, res) {
-    const email = req.body.email;
-    const password = req.body.password;
-    const name = req.body.name;
+app.post("/signup", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+  const name = req.body.name;
 
-    await UserModel.create({
-        email: email,
-        password: password,
-        name: name
-    });
-    
-    res.json({
-        message: "You are signed up"
-    })
+  await UserModel.create({
+    email: email,
+    password: password,
+    name: name,
+  });
+
+  res.json({
+    message: "You are signed up",
+  });
 });
 
+app.post("/signin", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
 
-app.post("/signin", async function(req, res) {
-    const email = req.body.email;
-    const password = req.body.password;
-
+  try {
     const response = await UserModel.findOne({
-        email: email,
-        password: password,
+      email: email,
+      password: password,
     });
+  } catch (error) {
+    console.log(error);
+  }
 
-    if (response) {
-        const token = jwt.sign({
-            id: response._id.toString()
-        }, JWT_SECRET);
-
-        res.json({
-            token
-        })
-    } else {
-        res.status(403).json({
-            message: "Incorrect creds"
-        })
-    }
-});
-
-
-app.post("/todo", auth, async function(req, res) {
-    const userId = req.userId;
-    const title = req.body.title;
-    const done = req.body.done;
-
-    await TodoModel.create({
-        userId,
-        title,
-        done
-    });
+  if (response) {
+    const token = jwt.sign(
+      {
+        id: response._id.toString(),
+      },
+      JWT_SECRET
+    );
 
     res.json({
-        message: "Todo created"
-    })
+      token,
+    });
+  } else {
+    res.status(403).json({
+      message: "Incorrect creds",
+    });
+  }
 });
 
+app.post("/todo", auth, async function (req, res) {
+  const userId = req.userId;
+  const title = req.body.title;
+  const done = req.body.done;
 
-app.get("/todos", auth, async function(req, res) {
-    const userId = req.userId;
+  await TodoModel.create({
+    userId,
+    title,
+    done,
+  });
 
-    const todos = await TodoModel.find({
-        userId
-    });
+  res.json({
+    message: "Todo created",
+  });
+});
 
-    res.json({
-        todos
-    })
+app.get("/todos", auth, async function (req, res) {
+  const userId = req.userId;
+
+  const todos = await TodoModel.find({
+    userId,
+  });
+
+  res.json({
+    todos,
+  });
 });
 
 app.listen(3000);
